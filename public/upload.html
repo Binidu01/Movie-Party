@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🎥 Upload Media</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      margin-bottom: 30px;
+      font-size: 26px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    input[type="file"] {
+      padding: 10px;
+      border-radius: 10px;
+      background-color: #fff;
+      color: #000;
+      cursor: pointer;
+      font-size: 14px;
+      border: none;
+    }
+    button {
+      padding: 12px;
+      font-size: 16px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    @media (max-width: 500px) {
+      .container {
+        margin: 10px;
+        padding: 30px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📤 Upload Media File</h2>
+    <form id="uploadForm" enctype="multipart/form-data" method="POST">
+      <input type="file" name="video" accept="audio/*,video/*" required>
+      <button type="submit">Upload & Go to Room</button>
+    </form>
+  </div>
+
+  <script>
+    const roomId = location.pathname.split('/').pop();
+    const form = document.getElementById('uploadForm');
+    form.action = `/upload/${roomId}`;
+    form.onsubmit = () => sessionStorage.setItem('isAdmin_' + roomId, 'true');
+  </script>
+</body>
+</html>

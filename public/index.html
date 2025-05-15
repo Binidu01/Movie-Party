@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🎬 Watch Party</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background-color: rgba(255, 255, 255, 0.05);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+    h1 {
+      margin-bottom: 30px;
+      font-size: 32px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+    }
+    .btn-group {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    button {
+      padding: 12px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    @media (max-width: 500px) {
+      .container {
+        margin: 10px;
+        padding: 30px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎬 Watch Party</h1>
+    <input id="nameInput" placeholder="Your Name">
+    <div class="btn-group">
+      <button id="btnCreate">Create Room</button>
+      <input id="joinInput" placeholder="Room Code">
+      <button id="btnJoin">Join Room</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('btnCreate').onclick = async () => {
+      const name = document.getElementById('nameInput').value.trim();
+      if (!name) return alert('Enter name');
+      sessionStorage.setItem('username', name);
+      const { roomId } = await (await fetch('/create-room')).json();
+      location = `/upload/${roomId}`;
+    };
+
+    document.getElementById('btnJoin').onclick = async () => {
+      const name = document.getElementById('nameInput').value.trim();
+      const roomId = document.getElementById('joinInput').value.trim();
+      if (!name || !roomId) return alert('Enter name & code');
+      const { video } = await (await fetch(`/files/${roomId}`)).json();
+      if (!video) return alert('Invalid code or no media');
+      sessionStorage.setItem('username', name);
+      location = `/room/${roomId}`;
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Watch Room</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #121212; color: #fff; height: 100vh; display: flex; flex-direction: column; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; background: #1e1e1e; padding: 10px 20px; border-bottom: 1px solid #333; height: 70px; }
+    .avatar-box { display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; color: #fff; }
+    .room-info { font-size: 16px; }
+    .controls { display: flex; gap: 10px; align-items: center; }
+    .controls button { background: #2e7d32; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+    .controls button:hover { background: #1b5e20; }
+    .user-list { display: flex; gap: 16px; align-items: center; position: absolute; left: 50%; transform: translateX(-50%); }
+    .user-container { display: flex; flex-direction: column; align-items: center; font-size: 12px; }
+    .user-avatar { width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; margin-bottom: 4px; }
+    .user-name { margin-top: 2px; }
+
+    .main { flex: 1; display: flex; overflow: hidden; }
+    .video-container { flex: 3; background: #000; display: flex; align-items: center; justify-content: center; position: relative; }
+    video { max-width: 100%; max-height: 100%; background: #000; object-fit: contain; }
+    #videoPlayer { width: 100%; height: 100%; object-fit: contain; }
+    #status { position: absolute; color: #00e5ff; }
+
+    #splitter { width: 5px; cursor: col-resize; background: rgba(255,255,255,0.2); z-index: 10; }
+
+    /* YouTube-style chat */
+    .chat-container { flex: 1; display: flex; flex-direction: column; border-left: 1px solid #333; background: #181818; min-width: 300px; }
+    .chat-header { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #202020; border-bottom: 1px solid #333; font-size: 14px; }
+    .chat-header button { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
+    #chat { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column-reverse; }
+    .chat-message { display: flex; align-items: flex-start; margin-bottom: 16px; }
+    .chat-avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; margin-top: 4px;
+                   display: flex; align-items: center; justify-content: center; background: #555; color: #fff; font-size: 14px; font-weight: bold; }
+    .chat-content { background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 16px; max-width: 100%; display: inline-block; position: relative; }
+    .chat-content .username { font-weight: bold; font-size: 13px; margin-right: 6px; color: #fff; }
+    .chat-content .message { font-size: 14px; line-height: 1.3; color: #e0e0e0; }
+    .chat-content .timestamp { font-size: 11px; color: #aaa; margin-left: 6px; }
+
+    #chatInput { display: flex; padding: 10px; border-top: 1px solid #333; background: #202020; }
+    #chatInput input { flex: 1; padding: 8px 12px; border: none; border-radius: 20px; background: #303030; color: #fff; font-size: 14px; }
+    #chatInput button { margin-left: 10px; padding: 8px 16px; background: #065fd4; border: none; border-radius: 20px; color: #fff; font-size: 14px; cursor: pointer; }
+    #chatInput button:hover { background: #054aba; }
+
+    .notification-container { position: fixed; top: 80px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
+    .notification { 
+      background: #272727; 
+      color: #e0e0e0; 
+      padding: 12px 16px; 
+      border-radius: 6px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5); 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      min-width: 240px; 
+      animation: slideIn 0.3s ease-out;
+    }
+    .notification span { flex: 1; }
+    .notification .actions { display: flex; gap: 8px; margin-left: 10px; }
+    .notification button { 
+      background: transparent; 
+      border: none; 
+      padding: 4px; 
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .notification button.approve { color: #4CAF50; }
+    .notification button.deny { color: #f44336; }
+    .notification button:hover { opacity: 0.8; }
+
+    @keyframes slideIn { 
+      from { transform: translateX(100%); opacity: 0; } 
+      to { transform: translateX(0); opacity: 1; } 
+    }
+
+    #fileInput { display: none; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="avatar-box">
+      <div class="avatar" id="avatar">A</div>
+      <div class="room-info">
+        <div><strong id="usernameDisplay">Anon</strong></div>
+        <div>Room: <span id="roomIdDisplay"></span></div>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="actionBtn">🔄 Change Media</button>
+      <button id="toggleChat">💬 Chat</button>
+      <button id="endSessionBtn" style="display:none;">🛑 End</button>
+    </div>
+    <div class="user-list" id="userList"></div>
+  </div>
+
+  <input type="file" id="fileInput" accept="video/*,audio/*">
+
+  <div class="main">
+    <div class="video-container" id="videoContainer">
+      <video id="videoPlayer" controls style="display:none;"></video>
+      <div id="status">Loading…</div>
+    </div>
+       <div id="splitter"></div>
+    <div class="chat-container" id="chatContainer" style="display:flex;">
+      <div class="chat-header">
+        <span>Live Chat</span>
+        <button id="closeChat">×</button>
+      </div>
+      <div id="chat"></div>
+      <div id="chatInput">
+        <input id="msg" placeholder="Say something…">
+        <button id="send">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="notification-container" id="notifications"></div>
+  <form id="uploadForm" method="POST" enctype="multipart/form-data" style="display:none;"></form>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(async () => {
+    const roomId         = location.pathname.split('/').pop();
+    const username       = sessionStorage.getItem('username') || 'Anon';
+    const avatarEl       = document.getElementById('avatar');
+    const actionBtn      = document.getElementById('actionBtn');
+    const fileInput      = document.getElementById('fileInput');
+    const toggleChat     = document.getElementById('toggleChat');
+    const closeChat      = document.getElementById('closeChat');
+    const chatContainer  = document.getElementById('chatContainer');
+    const videoContainer = document.getElementById('videoContainer');
+    const endBtn         = document.getElementById('endSessionBtn');
+    const notifications  = document.getElementById('notifications');
+    const chatBox        = document.getElementById('chat');
+    const msgInput       = document.getElementById('msg');
+    const sendBtn        = document.getElementById('send');
+
+    // Display room & user
+    document.getElementById('roomIdDisplay').textContent = roomId;
+    document.getElementById('usernameDisplay').textContent = username;
+    avatarEl.textContent = username.charAt(0).toUpperCase();
+
+    // Chat history helpers
+    function saveChatHistory(msgs) {
+      localStorage.setItem(`chatHistory_${roomId}`, JSON.stringify(msgs));
+    }
+    function loadChatHistory() {
+      const raw = localStorage.getItem(`chatHistory_${roomId}`);
+      return raw ? JSON.parse(raw) : [];
+    }
+    let chatHistory = loadChatHistory();
+
+    // Assign each user a consistent HSL color
+    function stringToColor(name) {
+      let hash = 0;
+      for (let c of name) hash = c.charCodeAt(0) + ((hash << 5) - hash);
+      return `hsl(${Math.abs(hash) % 360},50%,30%)`;
+    }
+    const myColor = stringToColor(username);
+    avatarEl.style.background = myColor;
+
+    // Admin / temp‑admin state
+    const isAdmin       = sessionStorage.getItem(`isAdmin_${roomId}`) === 'true';
+    const hasTempAccess = sessionStorage.getItem(`tempAdmin_${roomId}`) === 'true';
+
+    // Countdown state
+    let countdownActive = false;
+    const existingEnd   = localStorage.getItem(`countdown_endTime_${roomId}`);
+    if (existingEnd) {
+      const remaining = Math.ceil((+existingEnd - Date.now())/1000);
+      if (remaining > 0) {
+        countdownActive = true;
+        startCountdown(remaining);
+      } else {
+        localStorage.removeItem(`countdown_endTime_${roomId}`);
+      }
+    }
+
+    // Render one chat message (YouTube‑style)
+    function append(name, message, color) {
+      const msgEl = document.createElement('div');
+      msgEl.className = 'chat-message';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'chat-avatar';
+      avatar.style.background = color;
+      avatar.textContent = name.charAt(0).toUpperCase();
+
+      const content = document.createElement('div');
+      content.className = 'chat-content';
+
+      const uname = document.createElement('span');
+      uname.className = 'username';
+      uname.textContent = name;
+
+      const msg  = document.createElement('span');
+      msg.className = 'message';
+      msg.textContent = message;
+
+      const ts   = document.createElement('span');
+      ts.className = 'timestamp';
+      const now = new Date();
+      ts.textContent = now.getHours().toString().padStart(2,'0')
+                   + ':' + now.getMinutes().toString().padStart(2,'0');
+
+      content.append(uname, msg, ts);
+      msgEl.append(avatar, content);
+
+      chatBox.insertBefore(msgEl, chatBox.firstChild);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Unified send logic
+    function sendMessage() {
+      const text = msgInput.value.trim();
+      if (!text) return;
+      append('You', text, myColor);
+      socket.emit('chat-message', { roomId, msg: text });
+      chatHistory.push({ name: 'You', message: text });
+      saveChatHistory(chatHistory);
+      msgInput.value = '';
+    }
+
+    // Hook send button
+    sendBtn.onclick = sendMessage;
+
+    // Hook Enter key (without Shift)
+    msgInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Action button logic (admin vs request)
+    function updateActionButton() {
+      if (isAdmin || hasTempAccess) {
+        actionBtn.textContent = '🔄 Change Media';
+        actionBtn.onclick = () => fileInput.click();
+        actionBtn.disabled = false;
+      } else if (countdownActive) {
+        actionBtn.disabled = true;
+      } else {
+        actionBtn.textContent = '🔄 Request Change';
+        actionBtn.disabled = false;
+        actionBtn.onclick = () => {
+          socket.emit('request-change', { roomId, name: username });
+          startCountdown(30);
+        };
+      }
+    }
+    updateActionButton();
+
+    function startCountdown(sec) {
+      let t = sec;
+      countdownActive = true;
+      actionBtn.disabled = true;
+      const endTime = Date.now() + t*1000;
+      localStorage.setItem(`countdown_endTime_${roomId}`, endTime.toString());
+      window.currentCountdownInterval = setInterval(() => {
+        actionBtn.textContent = `Wait (${t--}s)`;
+        if (t < 0) {
+          clearInterval(window.currentCountdownInterval);
+          countdownActive = false;
+          localStorage.removeItem(`countdown_endTime_${roomId}`);
+          updateActionButton();
+        }
+      }, 1000);
+    }
+
+    // Media upload
+    fileInput.onchange = async () => {
+      const form = new FormData();
+      form.append('video', fileInput.files[0]);
+      document.getElementById('status').textContent = 'Uploading…';
+      const res = await fetch(`/upload/${roomId}`, { method:'POST', body: form });
+      if (res.redirected) window.location = res.url;
+    };
+
+    // Chat toggle
+    toggleChat.onclick = () => {
+      const open = chatContainer.style.display === 'flex';
+      chatContainer.style.display = open ? 'none' : 'flex';
+      videoContainer.style.flex = open ? '1' : '2';
+    };
+    closeChat.onclick = () => {
+      chatContainer.style.display = 'none';
+      videoContainer.style.flex = '1';
+    };
+
+    // End session
+    if (isAdmin) endBtn.style.display = 'inline';
+    endBtn.onclick = async () => {
+      if (!confirm('End session?')) return;
+      const res = await fetch(`/end/${roomId}`, { method: 'POST' });
+      if ((await res.json()).success) location = '/';
+    };
+
+    // socket.io setup
+    const socket = io();
+    socket.emit('join-room', { roomId, name: username });
+
+    // Participant list
+    const used = new Set([myColor]);
+    socket.on('users-updated', users => {
+      document.getElementById('userList').innerHTML = users.map(u => {
+        let bg = stringToColor(u.name);
+        while (used.has(bg)) {
+          const [h,s,l] = bg.match(/\d+/g);
+          bg = `hsl(${h},${s}%,${Math.max(20,Math.min(40,+l + (Math.random()*10-5)))}%)`;
+        }
+        used.add(bg);
+        return `
+          <div class="user-container">
+            <div class="user-avatar" style="background:${bg}">
+              ${u.name.charAt(0).toUpperCase()}
+            </div>
+            <div class="user-name">${u.name}</div>
+          </div>`;
+      }).join('');
+    });
+
+    // Change requests & grants
+    socket.on('change-request', ({ from, requesterId }) => {
+      if (!isAdmin) return;
+      const note = document.createElement('div');
+      note.className = 'notification';
+      note.innerHTML = `
+        <span>${from} wants to change media</span>
+        <div class="actions">
+          <button class="approve">✅</button>
+          <button class="deny">❌</button>
+        </div>`;
+      note.querySelector('.approve').onclick = () => {
+        socket.emit('grant-change', { roomId, requesterId });
+        note.remove();
+      };
+      note.querySelector('.deny').onclick = () => note.remove();
+      notifications.appendChild(note);
+      setTimeout(() => note.remove(), 10000);
+    });
+    socket.on('change-granted', () => {
+      if (isAdmin) return;
+      sessionStorage.setItem(`tempAdmin_${roomId}`, 'true');
+      countdownActive = false;
+      localStorage.removeItem(`countdown_endTime_${roomId}`);
+      clearInterval(window.currentCountdownInterval);
+      actionBtn.textContent = '🔄 Change Media';
+      actionBtn.disabled = false;
+      actionBtn.onclick = () => fileInput.click();
+      const note = document.createElement('div');
+      note.className = 'notification';
+      note.innerHTML = '<span>Permission granted!</span>';
+      notifications.appendChild(note);
+      setTimeout(() => note.remove(), 5000);
+    });
+
+    // Media changed: keep tempAdmin intact
+    socket.on('media-changed', () => {
+      saveChatHistory(chatHistory);
+      localStorage.removeItem(`countdown_endTime_${roomId}`);
+      location.reload();
+    });
+
+    // Session end
+    socket.on('session-ended', () => {
+      localStorage.removeItem(`chatHistory_${roomId}`);
+      localStorage.removeItem(`countdown_endTime_${roomId}`);
+      location = '/';
+    });
+
+    // Load initial video
+    const data = await (await fetch(`/files/${roomId}`)).json();
+    if (!data.video) return showError('No media');
+    const video = document.getElementById('videoPlayer');
+    video.src = `/uploads/${roomId}/${data.video}`;
+    video.style.display = 'block';
+    document.getElementById('status').style.display = 'none';
+
+    // Restore stored chat
+    chatHistory.forEach(m => append(m.name, m.message, stringToColor(m.name) || myColor));
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Incoming chat
+    socket.on('chat-message', ({ name, msg }) => {
+      append(name, msg, stringToColor(name));
+      chatHistory.push({ name, message: msg });
+      saveChatHistory(chatHistory);
+    });
+
+    // Video sync logic
+    let sync = false, last = 0;
+    function emit(action) {
+      if (!sync) socket.emit('video-action', { roomId, action, time: video.currentTime });
+    }
+    video.addEventListener('play', () => emit('play'));
+    video.addEventListener('pause', () => emit('pause'));
+    video.addEventListener('seeking', () => emit('seek'));
+    video.addEventListener('timeupdate', () => {
+      const now = Date.now();
+      if (now - last > 1000) { last = now; emit('sync'); }
+    });
+    socket.on('video-action', ({ action, time }) => {
+      sync = true;
+      if (['seek','sync'].includes(action) && Math.abs(video.currentTime - time) > 0.2) {
+        video.currentTime = time;
+      }
+      if (action === 'play') { if (Math.abs(video.currentTime - time) > 0.2) video.currentTime = time; video.play(); }
+      if (action === 'pause') { if (Math.abs(video.currentTime - time) > 0.2) video.currentTime = time; video.pause(); }
+      setTimeout(() => sync = false, 50);
+    });
+
+    // Panel splitter drag
+    const splitter = document.getElementById('splitter');
+    let dragging = false;
+    splitter.addEventListener('mousedown', () => {
+      dragging = true;
+      document.body.style.cursor = 'col-resize';
+    });
+    window.addEventListener('mouseup', () => {
+      dragging = false;
+      document.body.style.cursor = '';
+    });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const rect = document.querySelector('.main').getBoundingClientRect();
+      let x = e.clientX - rect.left;
+      const min = 150, max = rect.width - 150;
+      x = Math.max(min, Math.min(max, x));
+      videoContainer.style.flex = `0 0 ${x}px`;
+      document.querySelector('.chat-container').style.flex = '1';
+    });
+
+})(); // end async
+
+// Utility: show errors
+function showError(msg) {
+  const s = document.getElementById('status');
+  s.textContent = msg;
+  s.style.color = '#f55';
+}
+
+// Hide top-bar on inactivity
+const topBar = document.querySelector('.top-bar');
+let hideBarTimer;
+function hideTopBar() { topBar.style.display = 'none'; }
+function resetHideTimer() {
+  topBar.style.display = 'flex';
+  clearTimeout(hideBarTimer);
+  hideBarTimer = setTimeout(hideTopBar, 10000);
+}
+document.addEventListener('mousemove', resetHideTimer);
+resetHideTimer();
+</script>
+</body>
+</html>
