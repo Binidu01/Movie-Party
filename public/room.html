@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Watch Room</title>
-  <link rel="stylesheet" href="/styles.css">
   <style>
     body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #121212; color: #fff; height: 100vh; display: flex; flex-direction: column; }
     .top-bar { display: flex; align-items: center; justify-content: space-between; background: #1e1e1e; padding: 10px 20px; border-bottom: 1px solid #333; height: 70px; }
@@ -13,6 +12,8 @@
     .controls { display: flex; gap: 10px; align-items: center; }
     .controls button { background: #2e7d32; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
     .controls button:hover { background: #1b5e20; }
+    .controls button.subtitle-btn { background: #ff9800; }
+    .controls button.subtitle-btn:hover { background: #e68900; }
     .user-list { display: flex; gap: 16px; align-items: center; position: absolute; left: 50%; transform: translateX(-50%); }
     .user-container { display: flex; flex-direction: column; align-items: center; font-size: 12px; }
     .user-avatar { width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; margin-bottom: 4px; }
@@ -23,6 +24,68 @@
     video { max-width: 100%; max-height: 100%; background: #000; object-fit: contain; }
     #videoPlayer { width: 100%; height: 100%; object-fit: contain; }
     #status { position: absolute; color: #00e5ff; }
+
+    /* Subtitle styling */
+    #videoPlayer::cue {
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #ffffff;
+      font-size: 20px;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      line-height: 1.2;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .subtitle-controls {
+      position: absolute;
+      bottom: 60px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 10px;
+      border-radius: 8px;
+      display: none;
+      z-index: 100;
+    }
+
+    .subtitle-controls.active {
+      display: block;
+    }
+
+    .subtitle-controls button {
+      background: #333;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      margin: 2px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .subtitle-controls button:hover {
+      background: #555;
+    }
+
+    .subtitle-controls button.active {
+      background: #ff9800;
+    }
+
+    .subtitle-upload {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #555;
+    }
+
+    .subtitle-upload input[type="file"] {
+      width: 100%;
+      padding: 4px;
+      background: #444;
+      border: 1px solid #666;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 12px;
+    }
 
     #splitter { width: 5px; cursor: col-resize; background: rgba(255,255,255,0.2); z-index: 10; }
 
@@ -38,6 +101,18 @@
     .chat-content .username { font-weight: bold; font-size: 13px; margin-right: 6px; color: #fff; }
     .chat-content .message { font-size: 14px; line-height: 1.3; color: #e0e0e0; }
     .chat-content .timestamp { font-size: 11px; color: #aaa; margin-left: 6px; }
+    
+    /* System message styling */
+    .system-message { justify-content: center; margin-bottom: 8px; }
+    .system-message .chat-content { 
+      background: rgba(255, 193, 7, 0.2); 
+      color: #ffc107; 
+      font-style: italic; 
+      text-align: center; 
+      font-size: 12px; 
+      padding: 4px 8px;
+      border-radius: 12px;
+    }
 
     #chatInput { display: flex; padding: 10px; border-top: 1px solid #333; background: #202020; }
     #chatInput input { flex: 1; padding: 8px 12px; border: none; border-radius: 20px; background: #303030; color: #fff; font-size: 14px; }
@@ -75,7 +150,38 @@
       to { transform: translateX(0); opacity: 1; } 
     }
 
-    #fileInput { display: none; }
+    #fileInput, #subtitleInput { display: none; }
+
+    /* UPLOAD PROGRESS BAR */
+    .progress-container {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      height: 20px;
+      overflow: hidden;
+      display: none;
+      z-index: 5;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: #28a745;
+      transition: width 0.2s ease;
+    }
+    #progress-text {
+      position: absolute;
+      bottom: 35px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: #00e5ff;
+      display: none;
+      z-index: 5;
+    }
   </style>
 </head>
 <body>
@@ -89,20 +195,41 @@
     </div>
     <div class="controls">
       <button id="actionBtn">🔄 Change Media</button>
+      <button id="subtitleBtn" class="subtitle-btn">📝 Subtitles</button>
       <button id="toggleChat">💬 Chat</button>
-      <button id="endSessionBtn" style="display:none;">🛑 End</button>
+      <button id="endSessionBtn" style="display:none;">🛑 End Session</button>
+      <button id="leaveRoomBtn" style="display:none;">👋 Leave Room</button>
     </div>
     <div class="user-list" id="userList"></div>
   </div>
 
   <input type="file" id="fileInput" accept="video/*,audio/*">
+  <input type="file" id="subtitleInput" accept=".srt,.vtt,.ass,.ssa" multiple>
 
   <div class="main">
     <div class="video-container" id="videoContainer">
-      <video id="videoPlayer" controls style="display:none;"></video>
+      <video id="videoPlayer" controls style="display:none;" crossorigin="anonymous"></video>
       <div id="status">Loading…</div>
+
+      <!-- Subtitle Controls -->
+      <div class="subtitle-controls" id="subtitleControls">
+        <div>
+          <button id="subtitleOff" class="active">Off</button>
+          <div id="subtitleTracks"></div>
+        </div>
+        <div class="subtitle-upload">
+          <label for="subtitleInput" style="color: #ccc; font-size: 12px;">Upload Subtitle Files:</label>
+          <input type="file" id="subtitleFileInput" accept=".srt,.vtt,.ass,.ssa" multiple style="margin-top: 4px;">
+        </div>
+      </div>
+
+      <!-- progress bar UI -->
+      <div class="progress-container" id="uploadProgress">
+        <div class="progress-bar"></div>
+      </div>
+      <div id="progress-text"></div>
     </div>
-       <div id="splitter"></div>
+    <div id="splitter"></div>
     <div class="chat-container" id="chatContainer" style="display:flex;">
       <div class="chat-header">
         <span>Live Chat</span>
@@ -126,31 +253,38 @@
     const username       = sessionStorage.getItem('username') || 'Anon';
     const avatarEl       = document.getElementById('avatar');
     const actionBtn      = document.getElementById('actionBtn');
+    const subtitleBtn    = document.getElementById('subtitleBtn');
     const fileInput      = document.getElementById('fileInput');
+    const subtitleInput  = document.getElementById('subtitleInput');
+    const subtitleFileInput = document.getElementById('subtitleFileInput');
+    const subtitleControls = document.getElementById('subtitleControls');
     const toggleChat     = document.getElementById('toggleChat');
     const closeChat      = document.getElementById('closeChat');
     const chatContainer  = document.getElementById('chatContainer');
     const videoContainer = document.getElementById('videoContainer');
     const endBtn         = document.getElementById('endSessionBtn');
+    const leaveBtn       = document.getElementById('leaveRoomBtn');
     const notifications  = document.getElementById('notifications');
     const chatBox        = document.getElementById('chat');
     const msgInput       = document.getElementById('msg');
     const sendBtn        = document.getElementById('send');
+
+    // Progress UI
+    const progressContainer = document.getElementById('uploadProgress');
+    const progressBar       = progressContainer.querySelector('.progress-bar');
+    const progressText      = document.getElementById('progress-text');
 
     // Display room & user
     document.getElementById('roomIdDisplay').textContent = roomId;
     document.getElementById('usernameDisplay').textContent = username;
     avatarEl.textContent = username.charAt(0).toUpperCase();
 
-    // Chat history helpers
-    function saveChatHistory(msgs) {
-      localStorage.setItem(`chatHistory_${roomId}`, JSON.stringify(msgs));
-    }
-    function loadChatHistory() {
-      const raw = localStorage.getItem(`chatHistory_${roomId}`);
-      return raw ? JSON.parse(raw) : [];
-    }
-    let chatHistory = loadChatHistory();
+    // Chat history is now handled server-side
+    let chatHistory = [];
+
+    // Subtitle management
+    let availableSubtitles = [];
+    let currentSubtitle = null;
 
     // Assign each user a consistent HSL color
     function stringToColor(name) {
@@ -162,7 +296,7 @@
     avatarEl.style.background = myColor;
 
     // Admin / temp‑admin state
-    const isAdmin       = sessionStorage.getItem(`isAdmin_${roomId}`) === 'true';
+    let isAdmin       = sessionStorage.getItem(`isAdmin_${roomId}`) === 'true';
     const hasTempAccess = sessionStorage.getItem(`tempAdmin_${roomId}`) === 'true';
 
     // Countdown state
@@ -178,37 +312,160 @@
       }
     }
 
+    // Subtitle functionality
+    function loadAvailableSubtitles() {
+      fetch(`/subtitles/${roomId}`)
+        .then(res => res.json())
+        .then(data => {
+          availableSubtitles = data.subtitles || [];
+          updateSubtitleControls();
+        })
+        .catch(err => console.log('No subtitles available'));
+    }
+
+    function updateSubtitleControls() {
+      const tracksContainer = document.getElementById('subtitleTracks');
+      tracksContainer.innerHTML = '';
+      
+      availableSubtitles.forEach((sub, index) => {
+        const btn = document.createElement('button');
+        btn.textContent = sub.name || `Track ${index + 1}`;
+        btn.onclick = () => setSubtitle(sub.file);
+        tracksContainer.appendChild(btn);
+      });
+    }
+
+    function setSubtitle(filename) {
+      const video = document.getElementById('videoPlayer');
+      
+      // Remove existing subtitle tracks
+      const existingTracks = video.querySelectorAll('track[kind="subtitles"]');
+      existingTracks.forEach(track => track.remove());
+      
+      if (filename) {
+        const track = document.createElement('track');
+        track.kind = 'subtitles';
+        track.src = `/subtitles/${roomId}/${filename}`;
+        track.srclang = 'en';
+        track.label = filename.replace(/\.[^/.]+$/, "");
+        track.default = true;
+        video.appendChild(track);
+        
+        // Update button states
+        document.querySelectorAll('#subtitleControls button').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+      } else {
+        // Turn off subtitles
+        document.querySelectorAll('#subtitleControls button').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('subtitleOff').classList.add('active');
+      }
+      
+      currentSubtitle = filename;
+      
+      // Sync subtitle choice with other users
+      socket.emit('subtitle-change', { roomId, subtitle: filename });
+    }
+
+    // Subtitle button toggle
+    subtitleBtn.onclick = () => {
+      const isVisible = subtitleControls.classList.contains('active');
+      if (isVisible) {
+        subtitleControls.classList.remove('active');
+      } else {
+        subtitleControls.classList.add('active');
+        loadAvailableSubtitles();
+      }
+    };
+
+    // Subtitle off button
+    document.getElementById('subtitleOff').onclick = () => setSubtitle(null);
+
+    // Subtitle file upload
+    subtitleFileInput.onchange = () => {
+      const files = Array.from(subtitleFileInput.files);
+      if (files.length === 0) return;
+
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('subtitles', file);
+      });
+
+      fetch(`/upload-subtitles/${roomId}`, {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          loadAvailableSubtitles();
+          showNotification(`Uploaded ${files.length} subtitle file(s)`);
+        } else {
+          showNotification('Failed to upload subtitles', 'error');
+        }
+      })
+      .catch(err => {
+        console.error('Subtitle upload error:', err);
+        showNotification('Error uploading subtitles', 'error');
+      });
+      
+      subtitleFileInput.value = '';
+    };
+
+    function showNotification(message, type = 'success') {
+      const note = document.createElement('div');
+      note.className = 'notification';
+      note.style.background = type === 'error' ? '#f44336' : '#4CAF50';
+      note.innerHTML = `<span>${message}</span>`;
+      notifications.appendChild(note);
+      setTimeout(() => note.remove(), 3000);
+    }
+
+    // Hide subtitle controls when clicking elsewhere
+    document.addEventListener('click', (e) => {
+      if (!subtitleBtn.contains(e.target) && !subtitleControls.contains(e.target)) {
+        subtitleControls.classList.remove('active');
+      }
+    });
+
     // Render one chat message (YouTube‑style)
-    function append(name, message, color) {
+    function append(name, message, color, timestamp = null) {
       const msgEl = document.createElement('div');
       msgEl.className = 'chat-message';
-
       const avatar = document.createElement('div');
       avatar.className = 'chat-avatar';
       avatar.style.background = color;
       avatar.textContent = name.charAt(0).toUpperCase();
-
       const content = document.createElement('div');
       content.className = 'chat-content';
-
       const uname = document.createElement('span');
       uname.className = 'username';
       uname.textContent = name;
-
       const msg  = document.createElement('span');
       msg.className = 'message';
       msg.textContent = message;
-
       const ts   = document.createElement('span');
       ts.className = 'timestamp';
-      const now = new Date();
-      ts.textContent = now.getHours().toString().padStart(2,'0')
-                   + ':' + now.getMinutes().toString().padStart(2,'0');
-
+      
+      // Use provided timestamp or create new one
+      const timeToUse = timestamp ? new Date(timestamp) : new Date();
+      ts.textContent = timeToUse.getHours().toString().padStart(2,'0')
+                   + ':' + timeToUse.getMinutes().toString().padStart(2,'0');
+      
       content.append(uname, msg, ts);
       msgEl.append(avatar, content);
-
       chatBox.insertBefore(msgEl, chatBox.firstChild);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Function to refresh chat display with current history
+    function refreshChatDisplay() {
+      // Clear current chat display
+      chatBox.innerHTML = '';
+      // Display current chat history
+      chatHistory.forEach(m => {
+        const originalTimestamp = m.timestamp || null;
+        append(m.name, m.message, stringToColor(m.name) || myColor, originalTimestamp);
+      });
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
@@ -216,17 +473,11 @@
     function sendMessage() {
       const text = msgInput.value.trim();
       if (!text) return;
-      append('You', text, myColor);
+      // Just emit the message - server will handle timestamp and broadcasting
       socket.emit('chat-message', { roomId, msg: text });
-      chatHistory.push({ name: 'You', message: text });
-      saveChatHistory(chatHistory);
       msgInput.value = '';
     }
-
-    // Hook send button
     sendBtn.onclick = sendMessage;
-
-    // Hook Enter key (without Shift)
     msgInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -234,7 +485,7 @@
       }
     });
 
-    // Action button logic (admin vs request)
+    // Action button logic
     function updateActionButton() {
       if (isAdmin || hasTempAccess) {
         actionBtn.textContent = '🔄 Change Media';
@@ -244,11 +495,11 @@
         actionBtn.disabled = true;
       } else {
         actionBtn.textContent = '🔄 Request Change';
-        actionBtn.disabled = false;
         actionBtn.onclick = () => {
           socket.emit('request-change', { roomId, name: username });
           startCountdown(30);
         };
+        actionBtn.disabled = false;
       }
     }
     updateActionButton();
@@ -270,32 +521,91 @@
       }, 1000);
     }
 
-    // Media upload
-    fileInput.onchange = async () => {
-      const form = new FormData();
-      form.append('video', fileInput.files[0]);
+    // Media upload with progress
+    fileInput.onchange = () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const xhr = new XMLHttpRequest();
+      const url = `/upload/${roomId}`;
+      const fd  = new FormData();
+      fd.append('video', file);
+
+      xhr.open('POST', url, true);
+
+      // show upload UI
+      progressContainer.style.display = 'block';
+      progressText.style.display      = 'block';
+      progressText.textContent        = 'Uploading: 0%';
+      progressBar.style.width         = '0%';
       document.getElementById('status').textContent = 'Uploading…';
-      const res = await fetch(`/upload/${roomId}`, { method:'POST', body: form });
-      if (res.redirected) window.location = res.url;
+
+      xhr.upload.onprogress = e => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width    = pct + '%';
+          progressText.textContent   = `Uploading: ${pct}%`;
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          progressBar.style.width    = '100%';
+          progressText.textContent   = 'Upload complete! Reloading…';
+          setTimeout(() => location.reload(), 700);
+        } else {
+          progressText.textContent = 'Upload failed. Try again.';
+        }
+      };
+
+      xhr.onerror = () => {
+        progressText.textContent = 'Error during upload.';
+      };
+
+      xhr.send(fd);
     };
 
-    // Chat toggle
+    // Updated chat toggle with history refresh
     toggleChat.onclick = () => {
       const open = chatContainer.style.display === 'flex';
-      chatContainer.style.display = open ? 'none' : 'flex';
-      videoContainer.style.flex = open ? '1' : '2';
+      if (open) {
+        // Closing chat
+        chatContainer.style.display = 'none';
+        videoContainer.style.flex = '1';
+      } else {
+        // Opening chat - refresh the chat history first
+        refreshChatDisplay();
+        chatContainer.style.display = 'flex';
+        videoContainer.style.flex = '2';
+      }
     };
     closeChat.onclick = () => {
       chatContainer.style.display = 'none';
       videoContainer.style.flex = '1';
     };
 
-    // End session
-    if (isAdmin) endBtn.style.display = 'inline';
+    // End session (admin only) / Leave room (participants)
+    function updateButtons() {
+      if (isAdmin) {
+        endBtn.style.display = 'inline';
+        leaveBtn.style.display = 'none';
+      } else {
+        endBtn.style.display = 'none';
+        leaveBtn.style.display = 'inline';
+      }
+    }
+    updateButtons();
+
     endBtn.onclick = async () => {
-      if (!confirm('End session?')) return;
+      if (!confirm('End session for everyone? This will close the room.')) return;
       const res = await fetch(`/end/${roomId}`, { method: 'POST' });
       if ((await res.json()).success) location = '/';
+    };
+
+    leaveBtn.onclick = () => {
+      if (!confirm('Leave this room?')) return;
+      socket.emit('leave-room', { roomId });
+      location = '/';
     };
 
     // socket.io setup
@@ -320,6 +630,17 @@
             <div class="user-name">${u.name}</div>
           </div>`;
       }).join('');
+    });
+
+    // Admin status update
+    socket.on('admin-status', ({ isAdminUser }) => {
+      isAdmin = isAdminUser;
+      if (isAdmin) {
+        sessionStorage.setItem(`isAdmin_${roomId}`, 'true');
+      } else {
+        sessionStorage.removeItem(`isAdmin_${roomId}`);
+      }
+      updateButtons();
     });
 
     // Change requests & grants
@@ -357,16 +678,21 @@
       setTimeout(() => note.remove(), 5000);
     });
 
-    // Media changed: keep tempAdmin intact
+    // Subtitle sync
+    socket.on('subtitle-change', ({ subtitle }) => {
+      if (subtitle !== currentSubtitle) {
+        setSubtitle(subtitle);
+      }
+    });
+
+    // Media changed
     socket.on('media-changed', () => {
-      saveChatHistory(chatHistory);
       localStorage.removeItem(`countdown_endTime_${roomId}`);
       location.reload();
     });
 
     // Session end
     socket.on('session-ended', () => {
-      localStorage.removeItem(`chatHistory_${roomId}`);
       localStorage.removeItem(`countdown_endTime_${roomId}`);
       location = '/';
     });
@@ -379,15 +705,22 @@
     video.style.display = 'block';
     document.getElementById('status').style.display = 'none';
 
-    // Restore stored chat
-    chatHistory.forEach(m => append(m.name, m.message, stringToColor(m.name) || myColor));
-    chatBox.scrollTop = chatBox.scrollHeight;
+    // Load available subtitles
+    loadAvailableSubtitles();
 
-    // Incoming chat
-    socket.on('chat-message', ({ name, msg }) => {
-      append(name, msg, stringToColor(name));
-      chatHistory.push({ name, message: msg });
-      saveChatHistory(chatHistory);
+    // Initial chat display
+    refreshChatDisplay();
+
+    // Server sends chat history when user joins
+    socket.on('chat-history', (history) => {
+      chatHistory = history;
+      refreshChatDisplay();
+    });
+
+    // Incoming chat messages from server
+    socket.on('chat-message', ({ name, message, timestamp }) => {
+      append(name, message, stringToColor(name) || myColor, timestamp);
+      chatHistory.push({ name, message, timestamp });
     });
 
     // Video sync logic
@@ -435,7 +768,6 @@
 
 })(); // end async
 
-// Utility: show errors
 function showError(msg) {
   const s = document.getElementById('status');
   s.textContent = msg;
