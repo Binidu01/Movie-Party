@@ -96,20 +96,20 @@
     #chat { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column-reverse; }
     .chat-message { display: flex; align-items: flex-start; margin-bottom: 16px; }
     .chat-avatar { width: 32px; height: 32px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; margin-top: 4px;
-                   display: flex; align-items: center; justify-content: center; background: #555; color: #fff; font-size: 14px; font-weight: bold; }
+      display: flex; align-items: center; justify-content: center; background: #555; color: #fff; font-size: 14px; font-weight: bold; }
     .chat-content { background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 16px; max-width: 100%; display: inline-block; position: relative; }
     .chat-content .username { font-weight: bold; font-size: 13px; margin-right: 6px; color: #fff; }
     .chat-content .message { font-size: 14px; line-height: 1.3; color: #e0e0e0; }
     .chat-content .timestamp { font-size: 11px; color: #aaa; margin-left: 6px; }
-    
+
     /* System message styling */
     .system-message { justify-content: center; margin-bottom: 8px; }
-    .system-message .chat-content { 
-      background: rgba(255, 193, 7, 0.2); 
-      color: #ffc107; 
-      font-style: italic; 
-      text-align: center; 
-      font-size: 12px; 
+    .system-message .chat-content {
+      background: rgba(255, 193, 7, 0.2);
+      color: #ffc107;
+      font-style: italic;
+      text-align: center;
+      font-size: 12px;
       padding: 4px 8px;
       border-radius: 12px;
     }
@@ -120,24 +120,24 @@
     #chatInput button:hover { background: #054aba; }
 
     .notification-container { position: fixed; top: 80px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
-    .notification { 
-      background: #272727; 
-      color: #e0e0e0; 
-      padding: 12px 16px; 
-      border-radius: 6px; 
-      box-shadow: 0 2px 8px rgba(0,0,0,0.5); 
-      display: flex; 
-      align-items: center; 
-      justify-content: space-between; 
-      min-width: 240px; 
+    .notification {
+      background: #272727;
+      color: #e0e0e0;
+      padding: 12px 16px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-width: 240px;
       animation: slideIn 0.3s ease-out;
     }
     .notification span { flex: 1; }
     .notification .actions { display: flex; gap: 8px; margin-left: 10px; }
-    .notification button { 
-      background: transparent; 
-      border: none; 
-      padding: 4px; 
+    .notification button {
+      background: transparent;
+      border: none;
+      padding: 4px;
       cursor: pointer;
       transition: opacity 0.2s;
     }
@@ -145,9 +145,9 @@
     .notification button.deny { color: #f44336; }
     .notification button:hover { opacity: 0.8; }
 
-    @keyframes slideIn { 
-      from { transform: translateX(100%); opacity: 0; } 
-      to { transform: translateX(0); opacity: 1; } 
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
     }
 
     #fileInput, #subtitleInput { display: none; }
@@ -185,70 +185,68 @@
   </style>
 </head>
 <body>
-  <div class="top-bar">
-    <div class="avatar-box">
-      <div class="avatar" id="avatar">A</div>
-      <div class="room-info">
-        <div><strong id="usernameDisplay">Anon</strong></div>
-        <div>Room: <span id="roomIdDisplay"></span></div>
-      </div>
-    </div>
-    <div class="controls">
-      <button id="actionBtn">🔄 Change Media</button>
-      <button id="subtitleBtn" class="subtitle-btn">📝 Subtitles</button>
-      <button id="toggleChat">💬 Chat</button>
-      <button id="endSessionBtn" style="display:none;">🛑 End Session</button>
-      <button id="leaveRoomBtn" style="display:none;">👋 Leave Room</button>
-    </div>
-    <div class="user-list" id="userList"></div>
-  </div>
-
-  <input type="file" id="fileInput" accept="video/*,audio/*">
-  <input type="file" id="subtitleInput" accept=".srt,.vtt,.ass,.ssa" multiple>
-
-  <div class="main">
-    <div class="video-container" id="videoContainer">
-      <video id="videoPlayer" controls style="display:none;" crossorigin="anonymous"></video>
-      <div id="status">Loading…</div>
-
-      <!-- Subtitle Controls -->
-      <div class="subtitle-controls" id="subtitleControls">
-        <div>
-          <button id="subtitleOff" class="active">Off</button>
-          <div id="subtitleTracks"></div>
-        </div>
-        <div class="subtitle-upload">
-          <label for="subtitleInput" style="color: #ccc; font-size: 12px;">Upload Subtitle Files:</label>
-          <input type="file" id="subtitleFileInput" accept=".srt,.vtt,.ass,.ssa" multiple style="margin-top: 4px;">
-        </div>
-      </div>
-
-      <!-- progress bar UI -->
-      <div class="progress-container" id="uploadProgress">
-        <div class="progress-bar"></div>
-      </div>
-      <div id="progress-text"></div>
-    </div>
-    <div id="splitter"></div>
-    <div class="chat-container" id="chatContainer" style="display:flex;">
-      <div class="chat-header">
-        <span>Live Chat</span>
-        <button id="closeChat">×</button>
-      </div>
-      <div id="chat"></div>
-      <div id="chatInput">
-        <input id="msg" placeholder="Say something…">
-        <button id="send">Send</button>
-      </div>
+<div class="top-bar">
+  <div class="avatar-box">
+    <div class="avatar" id="avatar">A</div>
+    <div class="room-info">
+      <div><strong id="usernameDisplay">Anon</strong></div>
+      <div>Room: <span id="roomIdDisplay"></span></div>
     </div>
   </div>
+  <div class="controls">
+    <button id="actionBtn">🔄 Change Media</button>
+    <button id="subtitleBtn" class="subtitle-btn">📝 Subtitles</button>
+    <button id="toggleChat">💬 Chat</button>
+    <button id="endSessionBtn" style="display:none;">🛑 End Session</button>
+    <button id="leaveRoomBtn" style="display:none;">👋 Leave Room</button>
+  </div>
+  <div class="user-list" id="userList"></div>
+</div>
 
-  <div class="notification-container" id="notifications"></div>
-  <form id="uploadForm" method="POST" enctype="multipart/form-data" style="display:none;"></form>
+<input type="file" id="fileInput" accept="video/*,audio/*">
+<input type="file" id="subtitleInput" accept=".srt,.vtt,.ass,.ssa" multiple>
+
+<div class="main">
+  <div class="video-container" id="videoContainer">
+    <video id="videoPlayer" controls style="display:none;" crossorigin="anonymous"></video>
+    <div id="status">Loading…</div>
+
+    <div class="subtitle-controls" id="subtitleControls">
+      <div>
+        <button id="subtitleOff" class="active">Off</button>
+        <div id="subtitleTracks"></div>
+      </div>
+      <div class="subtitle-upload">
+        <label for="subtitleInput" style="color: #ccc; font-size: 12px;">Upload Subtitle Files:</label>
+        <input type="file" id="subtitleFileInput" accept=".srt,.vtt,.ass,.ssa" multiple style="margin-top: 4px;">
+      </div>
+    </div>
+
+    <div class="progress-container" id="uploadProgress">
+      <div class="progress-bar"></div>
+    </div>
+    <div id="progress-text"></div>
+  </div>
+  <div id="splitter"></div>
+  <div class="chat-container" id="chatContainer" style="display:flex;">
+    <div class="chat-header">
+      <span>Live Chat</span>
+      <button id="closeChat">×</button>
+    </div>
+    <div id="chat"></div>
+    <div id="chatInput">
+      <input id="msg" placeholder="Say something…">
+      <button id="send">Send</button>
+    </div>
+  </div>
+</div>
+
+<div class="notification-container" id="notifications"></div>
+<form id="uploadForm" method="POST" enctype="multipart/form-data" style="display:none;"></form>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-(async () => {
+  (async () => {
     const roomId         = location.pathname.split('/').pop();
     const username       = sessionStorage.getItem('username') || 'Anon';
     const avatarEl       = document.getElementById('avatar');
@@ -315,18 +313,18 @@
     // Subtitle functionality
     function loadAvailableSubtitles() {
       fetch(`/subtitles/${roomId}`)
-        .then(res => res.json())
-        .then(data => {
-          availableSubtitles = data.subtitles || [];
-          updateSubtitleControls();
-        })
-        .catch(err => console.log('No subtitles available'));
+              .then(res => res.json())
+              .then(data => {
+                availableSubtitles = data.subtitles || [];
+                updateSubtitleControls();
+              })
+              .catch(err => console.log('No subtitles available'));
     }
 
     function updateSubtitleControls() {
       const tracksContainer = document.getElementById('subtitleTracks');
       tracksContainer.innerHTML = '';
-      
+
       availableSubtitles.forEach((sub, index) => {
         const btn = document.createElement('button');
         btn.textContent = sub.name || `Track ${index + 1}`;
@@ -337,11 +335,11 @@
 
     function setSubtitle(filename) {
       const video = document.getElementById('videoPlayer');
-      
+
       // Remove existing subtitle tracks
       const existingTracks = video.querySelectorAll('track[kind="subtitles"]');
       existingTracks.forEach(track => track.remove());
-      
+
       if (filename) {
         const track = document.createElement('track');
         track.kind = 'subtitles';
@@ -350,7 +348,7 @@
         track.label = filename.replace(/\.[^/.]+$/, "");
         track.default = true;
         video.appendChild(track);
-        
+
         // Update button states
         document.querySelectorAll('#subtitleControls button').forEach(btn => btn.classList.remove('active'));
         event.target.classList.add('active');
@@ -359,9 +357,9 @@
         document.querySelectorAll('#subtitleControls button').forEach(btn => btn.classList.remove('active'));
         document.getElementById('subtitleOff').classList.add('active');
       }
-      
+
       currentSubtitle = filename;
-      
+
       // Sync subtitle choice with other users
       socket.emit('subtitle-change', { roomId, subtitle: filename });
     }
@@ -394,23 +392,24 @@
         method: 'POST',
         body: formData
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          loadAvailableSubtitles();
-          showNotification(`Uploaded ${files.length} subtitle file(s)`);
-        } else {
-          showNotification('Failed to upload subtitles', 'error');
-        }
-      })
-      .catch(err => {
-        console.error('Subtitle upload error:', err);
-        showNotification('Error uploading subtitles', 'error');
-      });
-      
+              .then(res => res.json())
+              .then(data => {
+                if (data.success) {
+                  loadAvailableSubtitles();
+                  showNotification('Uploaded ' + files.length + ' subtitle file(s)');
+                } else {
+                  showNotification('Failed to upload subtitles', 'error');
+                }
+              })
+              .catch(err => {
+                console.error('Subtitle upload error:', err);
+                showNotification('Error uploading subtitles', 'error');
+              });
+
       subtitleFileInput.value = '';
     };
 
+    // New function to show a general notification toast
     function showNotification(message, type = 'success') {
       const note = document.createElement('div');
       note.className = 'notification';
@@ -419,6 +418,34 @@
       notifications.appendChild(note);
       setTimeout(() => note.remove(), 3000);
     }
+
+    // New function to show a specific chat toast
+    function showToastNotification(senderName, message) {
+      const chatContainer = document.getElementById('chatContainer');
+      const isChatOpen = chatContainer.style.display === 'flex';
+
+      if (!isChatOpen) {
+        const toast = document.createElement('div');
+        toast.className = 'notification';
+        toast.style.background = '#272727';
+        toast.style.color = '#e0e0e0';
+
+        toast.innerHTML = `
+          <div style="display: flex; align-items: center;">
+            <div class="chat-avatar" style="background: ${stringToColor(senderName)}; margin-right: 10px;">
+              ${senderName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <strong style="font-size: 14px;">${senderName}</strong>
+              <p style="margin: 0; font-size: 13px;">${message}</p>
+            </div>
+          </div>
+        `;
+        notifications.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+      }
+    }
+
 
     // Hide subtitle controls when clicking elsewhere
     document.addEventListener('click', (e) => {
@@ -445,12 +472,12 @@
       msg.textContent = message;
       const ts   = document.createElement('span');
       ts.className = 'timestamp';
-      
+
       // Use provided timestamp or create new one
       const timeToUse = timestamp ? new Date(timestamp) : new Date();
       ts.textContent = timeToUse.getHours().toString().padStart(2,'0')
-                   + ':' + timeToUse.getMinutes().toString().padStart(2,'0');
-      
+              + ':' + timeToUse.getMinutes().toString().padStart(2,'0');
+
       content.append(uname, msg, ts);
       msgEl.append(avatar, content);
       chatBox.insertBefore(msgEl, chatBox.firstChild);
@@ -719,8 +746,19 @@
 
     // Incoming chat messages from server
     socket.on('chat-message', ({ name, message, timestamp }) => {
-      append(name, message, stringToColor(name) || myColor, timestamp);
+      // Add the message to the chat history
       chatHistory.push({ name, message, timestamp });
+
+      // Check if chat is open. If so, refresh the display.
+      const chatContainer = document.getElementById('chatContainer');
+      const isChatOpen = chatContainer.style.display === 'flex';
+
+      if (isChatOpen) {
+        refreshChatDisplay();
+      } else {
+        // If chat is closed, show a toast notification
+        showToastNotification(name, message);
+      }
     });
 
     // Video sync logic
@@ -766,25 +804,25 @@
       document.querySelector('.chat-container').style.flex = '1';
     });
 
-})(); // end async
+  })(); // end async
 
-function showError(msg) {
-  const s = document.getElementById('status');
-  s.textContent = msg;
-  s.style.color = '#f55';
-}
+  function showError(msg) {
+    const s = document.getElementById('status');
+    s.textContent = msg;
+    s.style.color = '#f55';
+  }
 
-// Hide top-bar on inactivity
-const topBar = document.querySelector('.top-bar');
-let hideBarTimer;
-function hideTopBar() { topBar.style.display = 'none'; }
-function resetHideTimer() {
-  topBar.style.display = 'flex';
-  clearTimeout(hideBarTimer);
-  hideBarTimer = setTimeout(hideTopBar, 10000);
-}
-document.addEventListener('mousemove', resetHideTimer);
-resetHideTimer();
+  // Hide top-bar on inactivity
+  const topBar = document.querySelector('.top-bar');
+  let hideBarTimer;
+  function hideTopBar() { topBar.style.display = 'none'; }
+  function resetHideTimer() {
+    topBar.style.display = 'flex';
+    clearTimeout(hideBarTimer);
+    hideBarTimer = setTimeout(hideTopBar, 10000);
+  }
+  document.addEventListener('mousemove', resetHideTimer);
+  resetHideTimer();
 </script>
 </body>
 </html>
